@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Hospital AI Assistant</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #74ebd5, #ACB6E5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .chat-container {
+      width: 420px;
+      height: 650px;
+      backdrop-filter: blur(15px);
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .header {
+      background: rgba(0,0,0,0.2);
+      color: white;
+      padding: 15px;
+      font-size: 18px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .chat-box {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .message {
+      display: flex;
+      align-items: flex-end;
+      margin: 10px 0;
+    }
+
+    .bubble {
+      padding: 10px 15px;
+      border-radius: 15px;
+      max-width: 70%;
+      font-size: 14px;
+      position: relative;
+    }
+
+    .user .bubble {
+      background: #4CAF50;
+      color: white;
+      margin-left: auto;
+    }
+
+    .bot .bubble {
+      background: #ffffff;
+      color: black;
+    }
+
+    .avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+
+    .time {
+      font-size: 10px;
+      margin-top: 3px;
+      opacity: 0.6;
+    }
+
+    .input-area {
+      display: flex;
+      padding: 10px;
+      background: rgba(255,255,255,0.3);
+    }
+
+    input {
+      flex: 1;
+      padding: 10px;
+      border-radius: 10px;
+      border: none;
+      outline: none;
+    }
+
+    button {
+      margin-left: 10px;
+      padding: 10px 15px;
+      border: none;
+      background: #4CAF50;
+      color: white;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .typing {
+      font-size: 12px;
+      color: gray;
+      margin-left: 35px;
+    }
+
+  </style>
+</head>
+
+<body>
+
+<div class="chat-container">
+  
+  <div class="header">🏥 AI Hospital Assistant</div>
+
+  <div class="chat-box" id="chatBox"></div>
+
+  <div class="input-area">
+    <input id="msg" placeholder="Type your symptoms...">
+    <button onclick="send()">Send</button>
+  </div>
+
+</div>
+
+<script>
+// Auth Check on load
+if(!localStorage.getItem("username")) {
+    window.location.href = "login.html";
+}
+
+function getTime() {
+  let d = new Date();
+  return d.getHours() + ":" + String(d.getMinutes()).padStart(2,'0');
+}
+
+function addMessage(text, type) {
+  let chatBox = document.getElementById("chatBox");
+
+  let msgDiv = document.createElement("div");
+  msgDiv.classList.add("message", type);
+
+  let bubble = document.createElement("div");
+  bubble.classList.add("bubble");
+  bubble.innerHTML = text + `<div class="time">${getTime()}</div>`;
+
+  if(type === "bot") {
+    let avatar = document.createElement("img");
+    avatar.src = "https://cdn-icons-png.flaticon.com/512/4712/4712109.png";
+    avatar.classList.add("avatar");
+    msgDiv.appendChild(avatar);
+  }
+
+  msgDiv.appendChild(bubble);
+  chatBox.appendChild(msgDiv);
+
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+async function send() {
+  let input = document.getElementById("msg");
+  let message = input.value;
+
+  if(message.trim() === "") return;
+
+  addMessage(message, "user");
+  input.value = "";
+
+  let typing = document.createElement("div");
+  typing.className = "typing";
+  typing.innerText = "Bot is typing...";
+  document.getElementById("chatBox").appendChild(typing);
+
+  // Auth check
+  let username = localStorage.getItem("username");
+  if(!username) {
+      window.location.href = "login.html";
+      return;
+  }
+
+  let res = await fetch("http://127.0.0.1:8000/chat", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({message: message, username: username})
+  });
+
+  let data = await res.json();
+
+  typing.remove();
+
+  let reply = `Severity: ${data.severity} <br> Waiting Time: ${data.waiting_time} mins`;
+
+  addMessage(reply, "bot");
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard - Triage Queue</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: #f4f7f6;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .queue-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .patient-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 5px solid #ccc;
+            background: #fafafa;
+        }
+
+        .severity-high {
+            border-left-color: #d9534f;
+            background: #fdf5f5;
+        }
+        
+        .severity-medium {
+            border-left-color: #f0ad4e;
+            background: #fcf8e3;
+        }
+
+        .severity-low {
+            border-left-color: #5cb85c;
+            background: #eff8f0;
+        }
+
+        .patient-info {
+            flex: 1;
+        }
+
+        .username {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .symptoms {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .meta {
+            text-align: right;
+            font-size: 13px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .badge.high { background: #d9534f; }
+        .badge.medium { background: #f0ad4e; }
+        .badge.low { background: #5cb85c; }
+
+    </style>
+</head>
+<body>
+
+<h1>👨‍⚕️ Triage Queue (Real-Time)</h1>
+<div class="queue-container" id="queueList">
+    <p style="text-align:center;">Loading queue...</p>
+</div>
+
+<script>
+    async function fetchQueue() {
+        try {
+            let res = await fetch("http://127.0.0.1:8000/queue");
+            let data = await res.json();
+            
+            let container = document.getElementById("queueList");
+            container.innerHTML = "";
+
+            if(data.length === 0) {
+                container.innerHTML = '<p style="text-align:center;">Queue is completely empty. Great job!</p>';
+                return;
+            }
+
+            data.forEach(patient => {
+                let card = document.createElement("div");
+                card.className = `patient-card severity-${patient.severity}`;
+                
+                // Format time
+                let date = new Date(patient.timestamp);
+                let timeStr = date.getHours() + ":" + String(date.getMinutes()).padStart(2, '0');
+
+                card.innerHTML = `
+                    <div class="patient-info">
+                        <div class="username">${patient.username}</div>
+                        <div class="symptoms">"${patient.symptoms}"</div>
+                    </div>
+                    <div class="meta">
+                        <div class="badge ${patient.severity}">${patient.severity}</div>
+                        <div>Est. Wait: ${patient.waiting_time} mins</div>
+                        <div style="color:#aaa; font-size:11px; margin-top:4px;">Arrived at ${timeStr}</div>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+        } catch (e) {
+            console.error("Failed to fetch queue", e);
+        }
+    }
+
+    // Fetch immediately
+    fetchQueue();
+
+    // Poll every 2 seconds for real-time updates
+    setInterval(fetchQueue, 2000);
+</script>
+
+</body>
+</html>

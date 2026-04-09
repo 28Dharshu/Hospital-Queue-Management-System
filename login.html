@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login / Register - AI Hospital</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #74ebd5, #ACB6E5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .auth-container {
+            width: 380px;
+            padding: 30px;
+            backdrop-filter: blur(15px);
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+            color: #333;
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #222;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            outline: none;
+            font-size: 14px;
+            box-sizing: border-box;
+            background: rgba(255, 255, 255, 0.6);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            background: #4CAF50;
+            color: white;
+            font-size: 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        .toggle-text {
+            margin-top: 15px;
+            font-size: 14px;
+            cursor: pointer;
+            color: #0056b3;
+            text-decoration: underline;
+        }
+
+        .error {
+            color: #d9534f;
+            font-size: 13px;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="auth-container">
+    <h2 id="formTitle">🏥 Login</h2>
+    
+    <div class="input-group">
+        <label>Username</label>
+        <input type="text" id="username" placeholder="Enter username">
+    </div>
+    
+    <div class="input-group">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="Enter password">
+    </div>
+
+    <button id="submitBtn" onclick="submitAuth()">Login</button>
+    <div id="errorMsg" class="error"></div>
+    
+    <div class="toggle-text" onclick="toggleMode()">
+        Don't have an account? Register here.
+    </div>
+</div>
+
+<script>
+    let isLogin = true;
+
+    function toggleMode() {
+        isLogin = !isLogin;
+        document.getElementById('formTitle').innerText = isLogin ? "🏥 Login" : "📋 Register";
+        document.getElementById('submitBtn').innerText = isLogin ? "Login" : "Register";
+        document.querySelector('.toggle-text').innerText = isLogin 
+            ? "Don't have an account? Register here." 
+            : "Already have an account? Login here.";
+        document.getElementById('errorMsg').style.display = "none";
+    }
+
+    async function submitAuth() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const errorMsg = document.getElementById('errorMsg');
+
+        if (!username || !password) {
+            errorMsg.innerText = "Please fill in all fields.";
+            errorMsg.style.display = "block";
+            return;
+        }
+
+        const endpoint = isLogin ? "/login" : "/register";
+        
+        try {
+            const response = await fetch("http://127.0.0.1:8000" + endpoint, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({username, password})
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Save token/username
+                localStorage.setItem("username", username);
+                window.location.href = "index.html"; // Redirect to chat
+            } else {
+                errorMsg.innerText = data.detail || "Authentication failed.";
+                errorMsg.style.display = "block";
+            }
+        } catch (error) {
+            errorMsg.innerText = "Server error. Try again.";
+            errorMsg.style.display = "block";
+        }
+    }
+</script>
+
+</body>
+</html>
